@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DON DON Information Academy</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        
+        /* Custom Header Styling */
+        .brand-header { text-align: center; margin-bottom: 25px; }
+        .brand-name { font-size: 42px; font-weight: 900; letter-spacing: 3px; color: #38bdf8; text-transform: uppercase; text-shadow: 0 0 15px rgba(56, 189, 248, 0.6); margin-bottom: 5px; }
+        .brand-sub { font-size: 16px; font-weight: bold; letter-spacing: 2px; color: #f43f5e; text-transform: uppercase; background: #1e293b; padding: 6px 16px; border-radius: 20px; border: 1px solid #f43f5e; display: inline-block; }
+
+        /* User Identity Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-box { background: #1e293b; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; text-align: center; }
+        .modal-box h2 { color: #38bdf8; margin-bottom: 10px; }
+        .modal-box p { font-size: 14px; color: #94a3b8; margin-bottom: 20px; }
+        
+        input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 15px; outline: none; }
+        input:focus { border-color: #38bdf8; }
+        
+        button { width: 100%; padding: 12px; background: #0284c7; border: none; border-radius: 6px; color: #fff; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0369a1; }
+
+        /* Main App Interface */
+        .app-container { width: 100%; max-width: 600px; text-align: center; }
+        .user-welcome { font-size: 14px; color: #38bdf8; margin-bottom: 15px; text-align: right; }
+        
+        .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
+        .search-box input { margin-bottom: 0; }
+        .search-box button { width: auto; padding: 0 25px; }
+
+        /* Country Details Card */
+        .country-card { background: #1e293b; border-radius: 12px; padding: 25px; border: 1px solid #334155; display: none; text-align: left; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .flag-img { width: 120px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+        .country-title { font-size: 24px; color: #38bdf8; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .info-row { font-size: 16px; margin-bottom: 10px; color: #cbd5e1; }
+        .info-row strong { color: #f8fafc; }
+        .error-msg { color: #f43f5e; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Identity Verification Modal -->
+    <div class="modal-overlay" id="identityModal">
+        <div class="modal-box">
+            <h2>User Verification</h2>
+            <p>Website access karne ke liye apni identity darj karein.</p>
+            <input type="text" id="userName" placeholder="Apna Poora Naam Likhain" required>
+            <input type="email" id="userEmail" placeholder="Apna Email Address Likhain" required>
+            <button onclick="saveIdentity()">Continue to Search</button>
+        </div>
+    </div>
+
+    <!-- Main Website Interface -->
+    <div class="app-container">
+        <!-- Main Branding Header -->
+        <div class="brand-header">
+            <h1 class="brand-name">TALAL</h1>
+            <div class="brand-sub">DON DON INFORMATION ACADEMY</div>
+        </div>
+
+        <div class="user-welcome" id="userWelcomeText"></div>
+        
+        <div class="search-box">
+            <input type="text" id="countryInput" placeholder="Mulk ka naam likhain (e.g. Pakistan, Japan)...">
+            <button onclick="searchCountry()">Search</button>
+        </div>
+        <p class="error-msg" id="errorText">Mulk nahi mila! Sahi naam darj karein.</p>
+
+        <!-- Result Display Card -->
+        <div class="country-card" id="countryCard">
+            <img src="" alt="Flag" class="flag-img" id="flagImg">
+            <h2 class="country-title" id="countryName"></h2>
+            <div class="info-row"><strong>Official Name:</strong> <span id="officialName"></span></div>
+            <div class="info-row"><strong>Capital:</strong> <span id="capital"></span></div>
+            <div class="info-row"><strong>Region:</strong> <span id="region"></span></div>
+            <div class="info-row"><strong>Population:</strong> <span id="population"></span></div>
+            <div class="info-row"><strong>Currencies:</strong> <span id="currency"></span></div>
+            <div class="info-row"><strong>Languages:</strong> <span id="languages"></span></div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const savedName = localStorage.getItem('user_name');
+            if (savedName) {
+                document.getElementById('identityModal').style.display = 'none';
+                document.getElementById('userWelcomeText').innerText = "Logged in as: " + savedName;
+            }
+        };
+
+        function saveIdentity() {
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+
+            if (name === "" || email === "") {
+                alert("Please dono fields fill karein!");
+                return;
+            }
+
+            localStorage.setItem('user_name', name);
+            localStorage.setItem('user_email', email);
+            
+            document.getElementById('identityModal').style.display = 'none';
+            document.getElementById('userWelcomeText').innerText = "Logged in as: " + name;
+        }
+
+        async function searchCountry() {
+            const countryName = document.getElementById('countryInput').value.trim();
+            const card = document.getElementById('countryCard');
+            const errorText = document.getElementById('errorText');
+
+            if (!countryName) return;
+
+            try {
+                const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}?fullText=false`);
+                if (!response.ok) throw new Error("Country not found");
+
+                const data = await response.json();
+                const country = data[0];
+
+                document.getElementById('flagImg').src = country.flags.png;
+                document.getElementById('countryName').innerText = country.name.common;
+                document.getElementById('officialName').innerText = country.name.official;
+                document.getElementById('capital').innerText = country.capital ? country.capital[0] : 'N/A';
+                document.getElementById('region').innerText = `${country.region} (${country.subregion || ''})`;
+                document.getElementById('population').innerText = country.population.toLocaleString();
+
+                const currencies = country.currencies ? Object.values(country.currencies).map(c => `${c.name} (${c.symbol || ''})`).join(', ') : 'N/A';
+                document.getElementById('currency').innerText = currencies;
+
+                const languages = country.languages ? Object.values(country.languages).join(', ') : 'N/A';
+                document.getElementById('languages').innerText = languages;
+
+                card.style.display = 'block';
+                errorText.style.display = 'none';
+
+            } catch (error) {
+                card.style.display = 'none';
+                errorText.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+  </html>
+  
